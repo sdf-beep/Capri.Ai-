@@ -1,8 +1,6 @@
-rm -f ~/capri_native/.github/workflows/build.yml
-cat << 'EOF' > ~/capri_native/.github/workflows/build.yml
 name: Build Capri APK
 
-on:
+'on':
   push:
     branches: [ "main" ]
   workflow_dispatch:
@@ -26,4 +24,3 @@ jobs:
         with:
           name: capri-apk
           path: ${{ steps.buildozer.outputs.filename }}
-EOF
