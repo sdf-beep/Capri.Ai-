@@ -1,23 +1,35 @@
 name: Build Capri APK
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build with Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v4
         with:
-          command: buildozer android debug
-          buildozer_version: stable
+          path: ~/.buildozer
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-global-
 
-      - name: Upload artifacts
+      - name: Build with Buildozer (official Docker image)
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}":/home/user/hostcwd \
+            -v ~/.buildozer:/home/user/.buildozer \
+            kivy/buildozer:latest \
+            buildozer android debug
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: capri-apk
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
