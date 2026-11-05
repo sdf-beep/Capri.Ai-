@@ -1,5 +1,3 @@
-rm -f ~/capri_native/buildozer.spec
-cat << 'EOF' > ~/capri_native/buildozer.spec
 [app]
 title = Capri AI
 package.name = capri_ai
@@ -15,4 +13,3 @@ android.ndk = 25b
 android.accept_sdk_license = True
 android.permissions = RECORD_AUDIO,FOREGROUND_SERVICE,SYSTEM_ALERT_WINDOW,INTERNET
 p4a.branch = master
-EOF
