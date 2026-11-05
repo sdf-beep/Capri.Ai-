@@ -20,16 +20,17 @@ jobs:
           restore-keys: |
             buildozer-global-
 
-      - name: Build with Buildozer (official Docker image)
+      - name: Build with Buildozer (with licenses)
         env:
           APP_ANDROID_ACCEPT_SDK_LICENSE: 1
         run: |
           docker run --rm \
+            --entrypoint /bin/bash \
             -e APP_ANDROID_ACCEPT_SDK_LICENSE=1 \
             -v "${{ github.workspace }}":/home/user/hostcwd \
             -v ~/.buildozer:/home/user/.buildozer \
             kivy/buildozer:latest \
-            bash -c "yes | sdkmanager --licenses && buildozer android debug"
+            -c "yes | sdkmanager --licenses && buildozer android debug"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
