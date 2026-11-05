@@ -1,3 +1,5 @@
+rm -f ~/capri_native/.github/workflows/build.yml
+cat << 'EOF' > ~/capri_native/.github/workflows/build.yml
 name: Build Capri APK
 
 on:
@@ -12,28 +14,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v4
+      - name: Build with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
+        id: buildozer
         with:
-          path: ~/.buildozer
-          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-global-
-
-      - name: Build with Buildozer (with licenses)
-        env:
-          APP_ANDROID_ACCEPT_SDK_LICENSE: 1
-        run: |
-          docker run --rm \
-            --entrypoint /bin/bash \
-            -e APP_ANDROID_ACCEPT_SDK_LICENSE=1 \
-            -v "${{ github.workspace }}":/home/user/hostcwd \
-            -v ~/.buildozer:/home/user/.buildozer \
-            kivy/buildozer:latest \
-            -c "yes | sdkmanager --licenses && buildozer android debug"
+          command: buildozer android debug
+          buildozer_version: stable
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: capri-apk
-          path: bin/*.apk
+          path: ${{ steps.buildozer.outputs.filename }}
+EOF
