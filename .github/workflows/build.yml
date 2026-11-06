@@ -30,13 +30,26 @@ jobs:
             autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
             libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Create sdkmanager symlink for Buildozer
+      # 1. Устанавливаем нужные пакеты SDK напрямую, без setup-android
+      - name: Install Android SDK packages
         run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          echo "Using sdkmanager at: $SDKMANAGER"
+          "$SDKMANAGER" --licenses
+          "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+
+      # 2. Создаём ссылку на sdkmanager в папке, которую ожидает Buildozer
+      - name: Setup sdkmanager for Buildozer
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -f "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          fi
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
-          ln -sf $(which sdkmanager) ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
+          ln -sf "$SDKMANAGER" ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
 
       - name: Install Buildozer and dependencies
         run: |
