@@ -7,7 +7,7 @@ name: Build Capri APK
 
 jobs:
   build-android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # <--- СТАБИЛЬНАЯ ВЕРСИЯ
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -46,12 +46,6 @@ jobs:
           sudo ln -sf /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager /usr/local/lib/android/sdk/tools/bin/sdkmanager
           sudo chmod +x /usr/local/lib/android/sdk/tools/bin/sdkmanager
 
-      - name: Configure Git for large downloads
-        run: |
-          git config --global http.postBuffer 524288000
-          git config --global http.lowSpeedLimit 1000
-          git config --global http.lowSpeedTime 60
-
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
@@ -61,22 +55,7 @@ jobs:
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          
-          max_attempts=3
-          attempt=1
-          until [ $attempt -gt $max_attempts ]; do
-            echo "Attempt $attempt of $max_attempts..."
-            if echo y | buildozer -v android debug; then
-              echo "Build succeeded!"
-              exit 0
-            else
-              echo "Attempt $attempt failed. Retrying in 30 seconds..."
-              attempt=$((attempt+1))
-              sleep 30
-            fi
-          done
-          echo "All attempts failed."
-          exit 1
+          echo y | buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
