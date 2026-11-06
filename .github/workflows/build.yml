@@ -38,28 +38,44 @@ jobs:
           "$SDKMANAGER" --licenses
           "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      # --- ЖЕЛЕЗОБЕТОННЫЙ ФИКС ПУТИ ---
       - name: Hard fix sdkmanager path
         run: |
-          # Создаем папку tools/bin с правами админа там, где ее ищет Buildozer
           sudo mkdir -p /usr/local/lib/android/sdk/tools/bin
-          # Делаем ссылку на настоящий sdkmanager
           sudo ln -sf /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager /usr/local/lib/android/sdk/tools/bin/sdkmanager
-          # Даем права на выполнение
           sudo chmod +x /usr/local/lib/android/sdk/tools/bin/sdkmanager
-          echo "Проверяем, что файл на месте:"
-          ls -la /usr/local/lib/android/sdk/tools/bin/sdkmanager
+
+      - name: Configure Git for large downloads
+        run: |
+          git config --global http.postBuffer 524288000
+          git config --global http.lowSpeedLimit 1000
+          git config --global http.lowSpeedTime 60
 
       - name: Install Buildozer and dependencies
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
-      - name: Build with Buildozer
+      - name: Build with Buildozer (Retry on Network Error)
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          echo y | buildozer -v android debug
+          
+          # Цикл повторных попыток
+          max_attempts=5
+          attempt=1
+          until [ $attempt -gt $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            if echo y | buildozer -v android debug; then
+              echo "Build succeeded!"
+              exit 0
+            else
+              echo "Attempt $attempt failed. Retrying in 30 seconds..."
+              attempt=$((attempt+1))
+              sleep 30
+            fi
+          done
+          echo "All attempts failed."
+          exit 1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
