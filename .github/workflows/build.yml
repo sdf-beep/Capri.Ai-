@@ -23,12 +23,6 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 1. Очищаем старую папку .buildozer (удаляем кэш)
-      - name: Clean Buildozer cache
-        run: |
-          rm -rf ~/.buildozer
-          echo "Cache cleared."
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -36,28 +30,20 @@ jobs:
             autoconf libtool pkg-config zlib1g-dev libncurses5-dev \
             libncursesw5-dev libtinfo6 cmake libffi-dev libssl-dev
 
-      # 2. Устанавливаем пакеты SDK с явным указанием пути
       - name: Install Android SDK packages
         run: |
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -f "$SDKMANAGER" ]; then
-            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          fi
           echo "Using sdkmanager at: $SDKMANAGER"
           "$SDKMANAGER" --licenses
           "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      # 3. Создаём ссылку на sdkmanager для Buildozer
       - name: Setup sdkmanager for Buildozer
         run: |
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -f "$SDKMANAGER" ]; then
-            SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
-          fi
           mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
           ln -sf "$SDKMANAGER" ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
 
@@ -65,12 +51,28 @@ jobs:
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
-      - name: Build with Buildozer
+      - name: Build with Buildozer (Retry on Network Error)
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
-          echo y | buildozer -v android debug
+          
+          # Цикл повторных попыток
+          max_attempts=3
+          attempt=1
+          until [ $attempt -gt $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            if echo y | buildozer -v android debug; then
+              echo "Build succeeded!"
+              exit 0
+            else
+              echo "Attempt $attempt failed. Retrying in 15 seconds..."
+              attempt=$((attempt+1))
+              sleep 15
+            fi
+          done
+          echo "All attempts failed."
+          exit 1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
