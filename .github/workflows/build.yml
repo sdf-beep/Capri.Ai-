@@ -28,6 +28,19 @@ jobs:
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
+      # --- ИСПРАВЛЕНИЕ: Явно находим sdkmanager и добавляем его в PATH ---
+      - name: Setup Android SDK Manager
+        run: |
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDKMANAGER="$(find "$SDK_ROOT" -name sdkmanager -type f 2>/dev/null | head -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::sdkmanager not found under $SDK_ROOT"
+            exit 1
+          fi
+          echo "SDKMANAGER=$SDKMANAGER" >> $GITHUB_ENV
+          echo "Found sdkmanager at: $SDKMANAGER"
+          "$SDKMANAGER" --version
+
       - name: Pre-create SDK licenses
         run: |
           mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
@@ -38,7 +51,8 @@ jobs:
       - name: Build with Buildozer
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          echo y | buildozer -v android debug || true
+          # Явно передаем путь к sdkmanager
+          echo y | buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
