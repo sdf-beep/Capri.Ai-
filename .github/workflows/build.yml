@@ -35,24 +35,20 @@ jobs:
           export ANDROID_HOME=/usr/local/lib/android/sdk
           export ANDROID_SDK_ROOT=$ANDROID_HOME
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          echo "Using sdkmanager at: $SDKMANAGER"
           "$SDKMANAGER" --licenses
           "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      - name: Setup sdkmanager for Buildozer
+      # --- ЖЕЛЕЗОБЕТОННЫЙ ФИКС ПУТИ ---
+      - name: Hard fix sdkmanager path
         run: |
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
-          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-          mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
-          ln -sf "$SDKMANAGER" ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-
-      # --- ФИКС ДЛЯ GIT: Увеличиваем буфер и таймауты ---
-      - name: Configure Git for large downloads
-        run: |
-          git config --global http.postBuffer 524288000
-          git config --global http.lowSpeedLimit 1000
-          git config --global http.lowSpeedTime 60
+          # Создаем папку tools/bin с правами админа там, где ее ищет Buildozer
+          sudo mkdir -p /usr/local/lib/android/sdk/tools/bin
+          # Делаем ссылку на настоящий sdkmanager
+          sudo ln -sf /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager /usr/local/lib/android/sdk/tools/bin/sdkmanager
+          # Даем права на выполнение
+          sudo chmod +x /usr/local/lib/android/sdk/tools/bin/sdkmanager
+          echo "Проверяем, что файл на месте:"
+          ls -la /usr/local/lib/android/sdk/tools/bin/sdkmanager
 
       - name: Install Buildozer and dependencies
         run: |
