@@ -12,4 +12,5 @@ android.minapi = 23
 android.ndk = 25b
 android.accept_sdk_license = True
 android.permissions = RECORD_AUDIO,FOREGROUND_SERVICE,SYSTEM_ALERT_WINDOW,INTERNET
+android.sdk_path = /usr/local/lib/android/sdk
 p4a.branch = master
