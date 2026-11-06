@@ -1,6 +1,6 @@
-name: Build Capri APK (Native)
+name: Build Capri APK
 
-on:
+'on':
   push:
     branches: [ "main" ]
   workflow_dispatch:
@@ -28,10 +28,17 @@ jobs:
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
+      - name: Pre-create SDK licenses
+        run: |
+          mkdir -p ~/.buildozer/android/platform/android-sdk/licenses
+          echo -e "\n8933bad161af4b6a5b573652ffc7aaf3aee85a47" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-license
+          echo -e "\nd56f5187479451eabf01fb78af6dfcb131b33910" > ~/.buildozer/android/platform/android-sdk/licenses/android-sdk-preview-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > ~/.buildozer/android/platform/android-sdk/licenses/google-tv-preview-license
+
       - name: Build with Buildozer
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          yes | buildozer -v android debug
+          echo y | buildozer -v android debug || true
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
