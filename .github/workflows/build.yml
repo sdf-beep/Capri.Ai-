@@ -50,7 +50,7 @@ jobs:
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
-      - name: Build with Buildozer
+      - name: Build with Buildozer (Retry on Network Error)
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -58,7 +58,21 @@ jobs:
           ANDROID_NDK_VERSION: 25b
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          echo y | buildozer -v android debug
+          max_attempts=5
+          attempt=1
+          until [ $attempt -gt $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            if echo y | buildozer -v android debug; then
+              echo "Build succeeded!"
+              exit 0
+            else
+              echo "Attempt $attempt failed. Retrying in 30 seconds..."
+              attempt=$((attempt+1))
+              sleep 30
+            fi
+          done
+          echo "All attempts failed."
+          exit 1
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
