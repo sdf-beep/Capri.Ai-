@@ -6,8 +6,8 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
 
-# Фиксируем версии Python, Kivy, pyjnius и Cython
-requirements = python3==3.12.9, hostpython3==3.12.9, kivy==2.3.1, pyjnius==1.4.0, cython==3.0.11
+# ЗОЛОТАЯ СВЯЗКА: Python 3.10, Kivy 2.3.0, Cython 0.29.36
+requirements = python3==3.10.12, hostpython3==3.10.12, kivy==2.3.0, cython==0.29.36
 
 orientation = portrait
 android.api = 33
