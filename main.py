@@ -7,9 +7,6 @@ from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
 import requests
 
-# Вставь сюда свой ключ Groq
-GROQ_API_KEY = "ТВОЙ_КЛЮЧ_GROQ_ЗДЕСЬ"
-
 class CapriUI(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -57,23 +54,17 @@ class CapriUI(BoxLayout):
 
     def get_ai_response(self, prompt):
         try:
-            headers = {
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            }
-            data = {
-                "model": "llama3-8b-8192",
-                "messages": [{"role": "user", "content": prompt}]
-            }
-            response = requests.post("https://api.groq.com/openai/v1/chat/completions", 
-                                     headers=headers, json=data, timeout=15)
+            server_url = "http://127.0.0.1:5001/chat"
+            data = {"prompt": prompt}
+            response = requests.post(server_url, json=data, timeout=20)
+            
             if response.status_code == 200:
-                ai_text = response.json()['choices'][0]['message']['content']
+                ai_text = response.json().get('response', 'Нет ответа')
                 Clock.schedule_once(lambda dt: self.update_ui(ai_text))
             else:
-                Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка API: {response.status_code}"))
+                Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка сервера: {response.status_code}"))
         except Exception as e:
-            Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка сети: {str(e)}"))
+            Clock.schedule_once(lambda dt: self.update_ui(f"Нет связи с сервером: {str(e)}"))
 
     def update_ui(self, text):
         self.chat_log.text += f"\n\nКапри: {text}"
