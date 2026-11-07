@@ -7,7 +7,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 0.1
 
 # Добавили requests для работы с Groq
-requirements = python3==3.10.12, hostpython3==3.10.12, kivy==2.3.0, cython==0.29.36, requests
+requirements = python3==3.10.12, hostpython3==3.10.12, kivy==2.3.0, cython==0.29.36
 
 orientation = portrait
 android.api = 33
