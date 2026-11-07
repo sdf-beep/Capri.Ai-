@@ -30,7 +30,8 @@ jobs:
             autoconf libtool libtool-bin libltdl-dev pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 \
             cmake libffi-dev libssl-dev libjpeg-dev libpng-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev
+            libbz2-dev libreadline-dev libsqlite3-dev \
+            libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev
 
       - name: Install Android SDK packages
         run: |
@@ -50,7 +51,6 @@ jobs:
         run: |
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
-      # Очистка кэша перед сборкой
       - name: Clean Buildozer cache
         run: |
           rm -rf ~/.buildozer
