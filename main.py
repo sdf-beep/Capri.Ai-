@@ -2,7 +2,7 @@ import threading
 import urllib.request
 import json
 import os
-import traceback
+import ssl
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -12,6 +12,7 @@ from kivy.clock import Clock
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 
+# Ключ подтягивается из настроек GitHub
 GROQ_API_KEY = os.environ.get("GROQ_KEY", "")
 
 class ChatScreen(BoxLayout):
@@ -62,9 +63,11 @@ class ChatScreen(BoxLayout):
     def get_ai_response(self, prompt):
         try:
             if not GROQ_API_KEY:
-                Clock.schedule_once(lambda dt: self.update_ui("Ошибка: Ключ не найден!"))
+                Clock.schedule_once(lambda dt: self.update_ui("Ошибка: Ключ GROQ_KEY не найден!"))
                 return
 
+            # Отключаем проверку сертификатов, чтобы Android не вылетал
+            context = ssl._create_unverified_context()
             url = "https://api.groq.com/openai/v1/chat/completions"
             data = {
                 "model": "llama3-8b-8192",
@@ -79,23 +82,14 @@ class ChatScreen(BoxLayout):
                 }
             )
             
-            with urllib.request.urlopen(req, timeout=20) as response:
+            with urllib.request.urlopen(req, timeout=20, context=context) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 ai_text = result['choices'][0]['message']['content']
                 Clock.schedule_once(lambda dt: self.update_ui(ai_text))
                 
         except Exception as e:
-            # Ловим ошибку и пишем в файл
-            error_msg = f"ОШИБКА: {str(e)}\n{traceback.format_exc()}"
-            print(error_msg) # Для логов Termux
-            try:
-                with open('/storage/emulated/0/capri_error.log', 'a') as f:
-                    f.write(error_msg + "\n---\n")
-            except:
-                pass # Если нет доступа к памяти, просто пропускаем
-            
-            # Показываем текст ошибки в чате, чтобы не вылетало
-            Clock.schedule_once(lambda dt: self.update_ui(f"Сбой: {str(e)}"))
+            # Вместо вылета просто показываем ошибку
+            Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка сети: {str(e)}"))
 
     def update_ui(self, text):
         self.chat_layout.remove_widget(self.chat_layout.children[0])
