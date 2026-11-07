@@ -7,7 +7,7 @@ name: Build Capri APK
 
 jobs:
   build-android:
-    runs-on: ubuntu-22.04 # <--- СТАБИЛЬНАЯ ВЕРСИЯ
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -51,10 +51,13 @@ jobs:
           pip install --upgrade buildozer cython==0.29.34 virtualenv
 
       - name: Build with Buildozer
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+          ANDROID_NDK_HOME: /usr/local/lib/android/sdk/ndk/25.2.9519653
+          ANDROID_NDK_VERSION: 25b
         run: |
           export APP_ANDROID_ACCEPT_SDK_LICENSE=1
-          export ANDROID_HOME=/usr/local/lib/android/sdk
-          export ANDROID_SDK_ROOT=$ANDROID_HOME
           echo y | buildozer -v android debug
 
       - name: Upload APK artifact
