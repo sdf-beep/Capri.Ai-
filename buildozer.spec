@@ -10,7 +10,8 @@ orientation = portrait
 android.api = 33
 android.minapi = 24
 android.ndk = 25b
-p4a.branch = develop
 android.accept_sdk_license = True
 android.permissions = RECORD_AUDIO,FOREGROUND_SERVICE,SYSTEM_ALERT_WINDOW,INTERNET
 android.archs = arm64-v8a
+# Используем стабильную ветку p4a
+p4a.branch = master
