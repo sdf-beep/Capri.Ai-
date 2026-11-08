@@ -1,7 +1,6 @@
 import threading
 import urllib.request
 import json
-import os
 import ssl
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
@@ -11,9 +10,6 @@ from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
-
-# Ключ подтягивается из настроек GitHub
-GROQ_API_KEY = os.environ.get("GROQ_KEY", "")
 
 class ChatScreen(BoxLayout):
     def __init__(self, **kwargs):
@@ -62,33 +58,27 @@ class ChatScreen(BoxLayout):
 
     def get_ai_response(self, prompt):
         try:
-            if not GROQ_API_KEY:
-                Clock.schedule_once(lambda dt: self.update_ui("Ошибка: Ключ GROQ_KEY не найден!"))
-                return
-
-            # Отключаем проверку сертификатов, чтобы Android не вылетал
+            # ТВОЙ АДРЕС CLOUDFLARE
+            server_url = "https://lucky-field-55a6.efimkojnov.workers.dev"
+            
+            data = {"messages": [{"role": "user", "content": prompt}]}
+            
             context = ssl._create_unverified_context()
-            url = "https://api.groq.com/openai/v1/chat/completions"
-            data = {
-                "model": "llama3-8b-8192",
-                "messages": [{"role": "user", "content": prompt}]
-            }
             req = urllib.request.Request(
-                url,
+                server_url,
                 data=json.dumps(data).encode('utf-8'),
-                headers={
-                    'Authorization': f'Bearer {GROQ_API_KEY}',
-                    'Content-Type': 'application/json'
-                }
+                headers={'Content-Type': 'application/json'}
             )
             
             with urllib.request.urlopen(req, timeout=20, context=context) as response:
                 result = json.loads(response.read().decode('utf-8'))
-                ai_text = result['choices'][0]['message']['content']
+                if "error" in result:
+                    ai_text = f"Ошибка сервера: {result['error']}"
+                else:
+                    ai_text = result['choices'][0]['message']['content']
                 Clock.schedule_once(lambda dt: self.update_ui(ai_text))
                 
         except Exception as e:
-            # Вместо вылета просто показываем ошибку
             Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка сети: {str(e)}"))
 
     def update_ui(self, text):
