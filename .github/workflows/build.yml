@@ -30,8 +30,7 @@ jobs:
             autoconf libtool libtool-bin libltdl-dev pkg-config \
             zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo6 \
             cmake libffi-dev libssl-dev libjpeg-dev libpng-dev \
-            libbz2-dev libreadline-dev libsqlite3-dev \
-            libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev
+            libbz2-dev libreadline-dev libsqlite3-dev
 
       - name: Install Android SDK packages
         run: |
@@ -49,12 +48,17 @@ jobs:
 
       - name: Install Buildozer and dependencies
         run: |
-          pip install --upgrade buildozer cython==0.29.34 virtualenv
+          pip install --upgrade buildozer cython==0.29.36 virtualenv
 
       - name: Clean Buildozer cache
         run: |
           rm -rf ~/.buildozer
           echo "Cache cleared."
+
+      # --- ВШИВАЕМ КЛЮЧ СЮДА ---
+      - name: Inject Secret Key
+        run: |
+          sed -i 's/os.environ.get("GROQ_KEY", "")/"${{ secrets.GROQ_KEY }}"/g' main.py
 
       - name: Build with Buildozer
         env:
