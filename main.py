@@ -2,7 +2,6 @@ import threading
 import urllib.request
 import json
 import ssl
-import os
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -11,12 +10,6 @@ from kivy.uix.textinput import TextInput
 from kivy.clock import Clock
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
-from kivy.core.audio import SoundLoader
-
-# --- НАСТРОЙКИ ELEVENLABS ---
-ELEVENLABS_API_KEY = "sk_f7b88d1c580ab4c9c6fa2ac83cade4c130c9fa846db79507"
-VOICE_ID = "kPIRzaGau1bCUYe8wVvk" 
-MODEL_ID = "eleven_multilingual_v2"
 
 class ChatScreen(BoxLayout):
     def __init__(self, **kwargs):
@@ -25,7 +18,6 @@ class ChatScreen(BoxLayout):
         self.padding = 10
         self.spacing = 10
 
-        # Область чата с прокруткой
         self.scroll = ScrollView(size_hint=(1, 0.7))
         self.chat_layout = GridLayout(cols=1, size_hint_y=None, spacing=10)
         self.chat_layout.bind(minimum_height=self.chat_layout.setter('height'))
@@ -34,7 +26,6 @@ class ChatScreen(BoxLayout):
 
         self.add_message("Капри", "Привет! Я Капри. Напиши мне что-нибудь.", (0.2, 0.6, 0.8, 1))
 
-        # Поле ввода и кнопка отправки
         input_layout = BoxLayout(size_hint=(1, 0.15), spacing=10)
         self.input_box = TextInput(multiline=False, font_size='18sp', hint_text="Твой вопрос...")
         input_layout.add_widget(self.input_box)
@@ -44,12 +35,9 @@ class ChatScreen(BoxLayout):
         input_layout.add_widget(self.send_btn)
         self.add_widget(input_layout)
 
-        # Кнопка очистки
         self.clear_btn = Button(text="Очистить чат", size_hint=(1, 0.1), background_color=(0.8, 0.2, 0.2, 1))
         self.clear_btn.bind(on_press=self.clear_chat)
         self.add_widget(self.clear_btn)
-
-        self.sound = None
 
     def add_message(self, sender, text, color):
         msg_label = Label(
@@ -78,7 +66,6 @@ class ChatScreen(BoxLayout):
 
     def get_ai_response(self, prompt):
         try:
-            # Адрес твоего Cloudflare Worker
             server_url = "https://lucky-field-55a6.efimkojnov.workers.dev"
             data = {"messages": [{"role": "user", "content": prompt}]}
             
@@ -92,56 +79,20 @@ class ChatScreen(BoxLayout):
             with urllib.request.urlopen(req, timeout=20, context=context) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 if "error" in result:
-                    ai_text = f"Ошибка сервера: {result['error']}"
+                    ai_text = f"Ошибка: {result['error']}"
                 else:
                     ai_text = result['choices'][0]['message']['content']
                 
                 Clock.schedule_once(lambda dt: self.update_ui(ai_text))
                 
         except Exception as e:
-            Clock.schedule_once(lambda dt: self.update_ui(f"Ошибка сети: {str(e)}"))
+            # Пишем ошибку в чат вместо вылета
+            Clock.schedule_once(lambda dt: self.update_ui(f"Сбой: {str(e)}"))
 
     def update_ui(self, text):
-        # Удаляем сообщение "Думает..."
         self.chat_layout.remove_widget(self.chat_layout.children[0])
         self.add_message("Капри", text, (0.2, 0.8, 0.4, 1))
         self.send_btn.disabled = False
-        
-        # Запускаем озвучку (если настроен ElevenLabs)
-        if ELEVENLABS_API_KEY != "ТВОЙ_КЛЮЧ_ELEVENLABS":
-            threading.Thread(target=self.speak_text, args=(text,), daemon=True).start()
-
-    def speak_text(self, text):
-        try:
-            url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
-            headers = {
-                "xi-api-key": ELEVENLABS_API_KEY,
-                "Content-Type": "application/json"
-            }
-            data = {
-                "text": text,
-                "model_id": MODEL_ID,
-                "voice_settings": {"stability": 0.5, "similarity_boost": 0.75}
-            }
-            
-            req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers)
-            temp_audio_path = os.path.join(os.getenv('HOME', '/data/data/org.capri.capri_ai/files'), "capri_voice.mp3")
-            
-            with urllib.request.urlopen(req, timeout=30) as response:
-                with open(temp_audio_path, 'wb') as f:
-                    f.write(response.read())
-            
-            Clock.schedule_once(lambda dt: self.play_audio(temp_audio_path))
-            
-        except Exception as e:
-            print(f"Ошибка озвучки: {e}")
-
-    def play_audio(self, file_path):
-        if self.sound:
-            self.sound.stop()
-        self.sound = SoundLoader.load(file_path)
-        if self.sound:
-            self.sound.play()
 
 class CapriApp(App):
     def build(self):
