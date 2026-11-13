@@ -62,21 +62,28 @@ class ChatScreen(BoxLayout):
             time.sleep(0.5) 
             
             server_url = "https://lucky-field-55a6.efimkojnov.workers.dev"
-            data = {"messages": [{"role": "user", "content": prompt}]}
+            
+            # Добавили модель и User-Agent, чтобы Cloudflare пропустил запрос
+            data = {
+                "model": "llama3-8b-8192",
+                "messages": [{"role": "user", "content": prompt}]
+            }
             
             context = ssl._create_unverified_context()
             req = urllib.request.Request(
                 server_url,
                 data=json.dumps(data).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
+                headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+                }
             )
             
-            # Увеличили таймаут до 60 секунд
             with urllib.request.urlopen(req, timeout=60, context=context) as response:
                 raw_data = response.read().decode('utf-8')
                 
                 if not raw_data:
-                    Clock.schedule_once(lambda dt: self.show_error("Сервер вернул пустоту. Попробуй еще раз."))
+                    Clock.schedule_once(lambda dt: self.show_error("Сервер вернул пустоту."))
                     return
                 
                 result = json.loads(raw_data)
