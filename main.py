@@ -2,6 +2,7 @@ import threading
 import urllib.request
 import json
 import ssl
+import time
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
@@ -35,10 +36,6 @@ class ChatScreen(BoxLayout):
         input_layout.add_widget(self.send_btn)
         self.add_widget(input_layout)
 
-        self.clear_btn = Button(text="Очистить чат", size_hint=(1, 0.1), background_color=(0.8, 0.2, 0.2, 1))
-        self.clear_btn.bind(on_press=self.clear_chat)
-        self.add_widget(self.clear_btn)
-
     def add_message(self, sender, text, color):
         msg_label = Label(
             text=f"[b]{sender}:[/b] {text}",
@@ -48,10 +45,6 @@ class ChatScreen(BoxLayout):
         msg_label.bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
         self.chat_layout.add_widget(msg_label)
         Clock.schedule_once(lambda dt: setattr(self.scroll, 'scroll_y', 0), 0.1)
-
-    def clear_chat(self, instance):
-        self.chat_layout.clear_widgets()
-        self.add_message("Капри", "Чат очищен. О чем поговорим?", (0.2, 0.6, 0.8, 1))
 
     def send_message(self, instance):
         user_text = self.input_box.text.strip()
@@ -66,6 +59,9 @@ class ChatScreen(BoxLayout):
 
     def get_ai_response(self, prompt):
         try:
+            # Небольшая пауза для инициализации сети на Android
+            time.sleep(0.5) 
+            
             server_url = "https://lucky-field-55a6.efimkojnov.workers.dev"
             data = {"messages": [{"role": "user", "content": prompt}]}
             
@@ -79,14 +75,13 @@ class ChatScreen(BoxLayout):
             with urllib.request.urlopen(req, timeout=20, context=context) as response:
                 result = json.loads(response.read().decode('utf-8'))
                 if "error" in result:
-                    ai_text = f"Ошибка: {result['error']}"
+                    ai_text = f"Ошибка сервера: {result['error']}"
                 else:
                     ai_text = result['choices'][0]['message']['content']
                 
                 Clock.schedule_once(lambda dt: self.update_ui(ai_text))
                 
         except Exception as e:
-            # Пишем ошибку в чат вместо вылета
             Clock.schedule_once(lambda dt: self.update_ui(f"Сбой: {str(e)}"))
 
     def update_ui(self, text):
