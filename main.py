@@ -59,7 +59,6 @@ class ChatScreen(BoxLayout):
 
     def get_ai_response(self, prompt):
         try:
-            # Небольшая пауза для инициализации сети на Android
             time.sleep(0.5) 
             
             server_url = "https://lucky-field-55a6.efimkojnov.workers.dev"
@@ -72,17 +71,31 @@ class ChatScreen(BoxLayout):
                 headers={'Content-Type': 'application/json'}
             )
             
-            with urllib.request.urlopen(req, timeout=20, context=context) as response:
-                result = json.loads(response.read().decode('utf-8'))
+            # Увеличили таймаут до 60 секунд
+            with urllib.request.urlopen(req, timeout=60, context=context) as response:
+                raw_data = response.read().decode('utf-8')
+                
+                if not raw_data:
+                    Clock.schedule_once(lambda dt: self.show_error("Сервер вернул пустоту. Попробуй еще раз."))
+                    return
+                
+                result = json.loads(raw_data)
+                
                 if "error" in result:
-                    ai_text = f"Ошибка сервера: {result['error']}"
+                    Clock.schedule_once(lambda dt: self.show_error(f"Ошибка: {result['error']}"))
                 else:
                     ai_text = result['choices'][0]['message']['content']
-                
-                Clock.schedule_once(lambda dt: self.update_ui(ai_text))
+                    Clock.schedule_once(lambda dt: self.update_ui(ai_text))
                 
         except Exception as e:
-            Clock.schedule_once(lambda dt: self.update_ui(f"Сбой: {str(e)}"))
+            error_msg = f"{type(e).__name__}: {str(e)}"
+            Clock.schedule_once(lambda dt: self.show_error(error_msg))
+
+    def show_error(self, text):
+        if self.chat_layout.children:
+            self.chat_layout.remove_widget(self.chat_layout.children[0])
+        self.add_message("Капри", text, (1, 0.2, 0.2, 1))
+        self.send_btn.disabled = False
 
     def update_ui(self, text):
         self.chat_layout.remove_widget(self.chat_layout.children[0])
